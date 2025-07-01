@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوت التحليل الاستشاري</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>لوحة التحكم الاستشارية للتداول</h1>
+</header>
+
+<main>
+    <div class="dashboard">
+        <!-- قسم الشارت -->
+        <div class="chart-container">
+            <!-- START: محدد العملات الجديد -->
+            <div id="coin-selector" class="coin-selector">
+                <!-- أزرار العملات سيتم إضافتها هنا عبر JavaScript -->
+            </div>
+            <!-- END: محدد العملات الجديد -->
+
+            <div class="timeframe-selector">
+                <button class="timeframe-btn active" data-interval="5m" data-title="5 دقائق">5د</button>
+                <button class="timeframe-btn" data-interval="15m" data-title="15 دقيقة">15د</button>
+                <button class="timeframe-btn" data-interval="1h" data-title="ساعة واحدة">1س</button>
+                <button class="timeframe-btn" data-interval="4h" data-title="4 ساعات">4س</button>
+                <button class="timeframe-btn" data-interval="1d" data-title="يوم واحد">1ي</button>
+            </div>
+
+            <!-- تم تعديل العنوان ليكون ديناميكياً -->
+            <h2><span id="chart-coin-title">شارت البيتكوين (BTC/USDT)</span> - <span id="chart-timeframe-title">إطار 5 دقائق</span></h2>
+
+            <div id="trading-chart"></div>
+            <div id="volume-chart-container">
+                <div id="volume-chart"></div>
+            </div>
+
+            <hr>
+            <h2 class="section-title">الإشارات والتنبيهات</h2>
+            <ul id="signals-log" style="list-style-type: none; padding: 0; margin: 10px 0 0 0;"></ul>
+            <ul id="trading-instructions" style="list-style-type: none; padding: 10px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; margin-top: 15px;"></ul>
+        </div>
+
+        <!-- قسم التحليل والملخص -->
+        <div class="analysis-panel">
+            <h2 class="section-title">الوضع الحالي والملخص</h2>
+            <div id="summary">
+                <p>السعر الحالي: <span id="current-price">...</span></p>
+                <p>الاتجاه العام: <span id="trend">...</span></p>
+                <p>مؤشر القوة النسبية (RSI): <span id="rsi-value">...</span></p>
+                <p>مشاعر السوق: <span id="fear-greed-value">...</span></p>
+            </div>
+
+            <hr>
+            <h2 class="section-title">إعدادات المؤشرات</h2>
+            <div class="indicator-settings">
+                <div class="setting-item">
+                    <label for="emaFast">EMA السريع:</label>
+                    <input type="number" id="emaFast" value="9">
+                </div>
+                <div class="setting-item">
+                    <label for="emaSlow">EMA البطيء:</label>
+                    <input type="number" id="emaSlow" value="21">
+                </div>
+                <div class="setting-item">
+                    <label for="rsiPeriod">فترة RSI:</label>
+                    <input type="number" id="rsiPeriod" value="14">
+                </div>
+                <div class="setting-item">
+                    <label for="capital">رأس المال ($):</label>
+                    <input type="number" id="capital" value="1000" min="100">
+                </div>
+                <div class="setting-item">
+                    <label for="riskPercentage">نسبة المخاطرة (%):</label>
+                    <input type="number" id="riskPercentage" value="1" min="0.1" max="5" step="0.1">
+                </div>
+                <div class="setting-item">
+                    <label for="uploadFile">تحميل بيانات Excel:</label>
+                    <input type="file" id="uploadFile" accept=".xlsx">
+                </div>
+                <div class="setting-item">
+                    <label for="bbPeriod">فترة BB:</label>
+                    <input type="number" id="bbPeriod" value="20">
+                </div>
+                <div class="setting-item">
+                    <label for="bbStdDev">انحراف BB:</label>
+                    <input type="number" id="bbStdDev" value="2">
+                </div>
+            </div>
+            <button id="apply-settings-btn">تطبيق الإعدادات</button>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
