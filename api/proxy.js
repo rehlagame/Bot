@@ -1,13 +1,13 @@
-// File: /api/proxy.js
+// File: /api/proxy.js (Corrected with module.exports)
 
 const axios = require('axios');
 
-// Vercel يتوقع دالة handler افتراضية
-// هذا الكود سيُنفذ في كل مرة يتم فيها طلب هذا المسار
-export default async function handler(req, res) {
+// Vercel يتوقع دالة handler يتم تصديرها باستخدام module.exports
+// هذا هو التعديل الرئيسي
+module.exports = async (req, res) => {
     // تمكين CORS للسماح بالطلبات من أي مكان (مهم لـ Vercel)
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); // أو نطاقك المحدد
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -36,10 +36,12 @@ export default async function handler(req, res) {
         res.status(200).json(response.data);
 
     } catch (error) {
+        // طباعة الخطأ في سجلات Vercel لتسهيل التصحيح
         console.error('Error fetching from Binance API:', error.response ? error.response.data : error.message);
+        
         res.status(error.response?.status || 500).json({
             message: 'Error fetching from Binance API',
             binanceError: error.response?.data || 'Unknown error',
         });
     }
-}
+};
