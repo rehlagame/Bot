@@ -18,23 +18,18 @@ const applySettingsBtn = document.getElementById('apply-settings-btn');
 const capitalInput = document.getElementById('capital');
 const uploadFileInput = document.getElementById('uploadFile');
 const riskPercentageInput = document.getElementById('riskPercentage');
-
-// --- START: New Coin Selector Elements ---
 const coinSelectorElement = document.getElementById('coin-selector');
 const chartCoinTitleElement = document.getElementById('chart-coin-title');
-// --- END: New Coin Selector Elements ---
-
 
 // --- Global State ---
 let indicatorSettings = { emaFast: 9, emaSlow: 21, rsiPeriod: 14, bbPeriod: 20, bbStdDev: 2 };
-let currentInterval = '5m'; // Default interval
+let currentInterval = '5m';
+let currentSymbol = 'BTCUSDT';
 let srLines = [];
 let chart, candleSeries, emaFastSeries, emaSlowSeries, bbUpperSeries, bbMiddleSeries, bbLowerSeries;
 let volumeChart, volumeSeries;
 let tradesHistory = [];
 
-// --- START: New Global State for Coins ---
-let currentSymbol = 'BTCUSDT'; // Default symbol
 const topCoins = [
     { symbol: 'BTCUSDT', name: 'Bitcoin' },
     { symbol: 'ETHUSDT', name: 'Ethereum' },
@@ -47,15 +42,11 @@ const topCoins = [
     { symbol: 'SHIBUSDT', name: 'Shiba Inu' },
     { symbol: 'DOTUSDT', name: 'Polkadot' }
 ];
-// --- END: New Global State for Coins ---
 
 // --- File Data Variables ---
 var gk_isXlsx = false;
 var gk_xlsxFileLookup = {};
 var gk_fileData = {};
-
-// ... (The rest of your existing functions: filledCell, loadFileData, initializeCharts, syncTimeRange, calculateEMA, etc. remain unchanged) ...
-// ... (Your existing functions from here down to fetchDataAndAnalyze are okay) ...
 
 function filledCell(cell) {
     return cell !== '' && cell != null && cell !== undefined;
@@ -109,7 +100,6 @@ function loadFileData(filename) {
     return gk_fileData[filename] ? (typeof gk_fileData[filename] === 'string' ? JSON.parse(gk_fileData[filename]) : gk_fileData[filename]) : [];
 }
 
-// --- Chart Initialization ---
 function initializeCharts() {
     if (!chartElement || !volumeChartElement) {
         console.error("Chart or Volume Chart DOM element not found!");
@@ -144,7 +134,6 @@ function initializeCharts() {
     return true;
 }
 
-// --- Time Range Synchronization ---
 let isSyncing = false;
 function syncTimeRange() {
     if (!chart || !volumeChart) return;
@@ -163,6 +152,7 @@ function syncTimeRange() {
         }
     });
 }
+
 function calculateEMA(prices, period) {
     if (!prices || prices.length < period) return [];
     const k = 2 / (period + 1); let emaArray = []; let sum = 0;
@@ -174,6 +164,7 @@ function calculateEMA(prices, period) {
     }
     return emaArray;
 }
+
 function calculateRSI(prices, period) {
     if (prices.length <= period) return 50;
     let gains = 0, losses = 0;
@@ -196,6 +187,7 @@ function calculateRSI(prices, period) {
     const rs = avgGain / avgLoss;
     return 100 - (100 / (1 + rs));
 }
+
 function calculateBollingerBands(prices, period, stdDevMultiplier) {
     if (prices.length < period) return [];
     let bbData = [];
@@ -208,6 +200,7 @@ function calculateBollingerBands(prices, period, stdDevMultiplier) {
     }
     return bbData;
 }
+
 function findAndDrawSR(chartData) {
     if (!candleSeries) return { lastResistance: 0, lastSupport: 0 };
     srLines.forEach(line => candleSeries.removePriceLine(line)); srLines = [];
@@ -245,6 +238,7 @@ function findAndDrawSR(chartData) {
         lastSupport: uniqueSupports.length > 0 ? Math.min(...uniqueSupports) : (chartData.length > 0 ? Math.min(...chartData.map(d => d.low)) : 0)
     };
 }
+
 async function fetchFearAndGreed(retryCount = 3) {
     if (!fearGreedElement) return;
     try {
@@ -265,6 +259,7 @@ async function fetchFearAndGreed(retryCount = 3) {
         else { fearGreedElement.textContent = 'فشل التحميل'; fearGreedElement.style.color = '#f44336'; }
     }
 }
+
 function generateMarketObservations(analysis) {
     let observations = []; const { rsi, price, emaFast, emaSlow, fngValue, bb } = analysis;
     if (!bb || typeof price !== 'number' || typeof rsi !== 'number') return [];
@@ -281,6 +276,7 @@ function generateMarketObservations(analysis) {
     else if (fngValue && fngValue < 25) observations.push({ text: "معنويات السوق في حالة خوف شديد، قد يشير لفرص محتملة.", type: 'buy' });
     return Array.from(new Set(observations.map(o => o.text))).map(text => observations.find(o => o.text === text));
 }
+
 function displayObservations(observations) {
     if (!signalsLog) return; signalsLog.innerHTML = '';
     if (observations.length === 0) {
@@ -293,6 +289,7 @@ function displayObservations(observations) {
         });
     }
 }
+
 function generateTradingInstructions(analysis, lastSR) {
     const { rsi, price, emaFast, emaSlow, fngValue, bb } = analysis;
     const { lastResistance, lastSupport } = lastSR; const instructions = [];
@@ -314,7 +311,6 @@ function generateTradingInstructions(analysis, lastSR) {
             const positionSize = amountToRisk / stopDistance; const stopLoss = lastSupport * (1 - 0.005);
             const takeProfit1 = price + stopDistance; const takeProfit2 = price + stopDistance * 2;
             instructions.push(`إدارة المخاطر المقترحة (شراء):`);
-            // The position size for crypto is often in the base currency (e.g., BTC, ETH)
             instructions.push(`  - حجم الصفقة: ${positionSize.toFixed(4)} ${currentSymbol.replace('USDT', '')}.`);
             instructions.push(`  - وقف الخسارة (Stop Loss) عند: $${stopLoss.toFixed(2)}.`);
             instructions.push(`  - الهدف الأول (Take Profit 1) عند: $${takeProfit1.toFixed(2)}.`);
@@ -323,6 +319,7 @@ function generateTradingInstructions(analysis, lastSR) {
     }
     return instructions;
 }
+
 function displayInstructions(instructions) {
     if (!instructionsElement) return; instructionsElement.innerHTML = '';
     instructions.forEach(instr => {
@@ -333,50 +330,43 @@ function displayInstructions(instructions) {
     });
     if (instructions.length === 0) instructionsElement.innerHTML = '<li>لا توجد تعليمات تداول محددة الآن.</li>';
 }
+
 function logTrade(action, price) {
     const trade = { action, price, date: new Date().toISOString() }; tradesHistory.push(trade);
 }
-// --- Main Data Fetching and Analysis Function ---
+
 async function fetchDataAndAnalyze() {
-    if (!candleSeries || !volumeSeries || !priceElement || !trendElement || !rsiElement || !fearGreedElement) {
+    if (!candleSeries || !volumeSeries || !priceElement || !trendElement || !rsiElement) {
         console.error("One or more critical DOM elements are missing. Aborting analysis.");
         return;
     }
     try {
         let chartData;
-        let source = "API";
-
+        
+        // Disable Excel file upload when deployed
         if (gk_isXlsx && Object.keys(gk_xlsxFileLookup).length > 0) {
-            const filename = Object.keys(gk_xlsxFileLookup)[0];
-            console.log(`[Frontend] Fetching data from Excel file: ${filename}`);
-            chartData = loadFileData(filename);
-            source = `ملف (${filename.substring(0, 15)}...)`;
-            if (!chartData || chartData.length === 0) {
-                throw new Error(`لم يتم العثور على بيانات صالحة في ملف Excel: ${filename}. تحقق من تنسيق الأعمدة (time, open, high, low, close, volume) وأنها تحتوي على قيم رقمية.`);
-            }
-            console.log(`[Frontend] Successfully loaded ${chartData.length} data points from Excel.`);
+             throw new Error("تحميل الملفات غير مدعوم في النسخة المنشورة حالياً.");
         } else {
             console.log(`[Frontend] Fetching data for symbol: ${currentSymbol}, interval: ${currentInterval}`);
-
-            // لا حاجة لـ localProxyUrl الآن
-          const params = new URLSearchParams({
-          symbol: currentSymbol,
-          interval: currentInterval,
-          limit: '300' 
-          });
-// استخدم مساراً نسبياً. المتصفح سيضيف النطاق تلقائياً
-const apiUrl = `/api/binance/klines?${params.toString()}`;
-console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
-            console.log(`[Frontend] Fetching from local proxy URL: ${apiUrl}`);
+            
+            // --- THIS IS THE CORRECTED API CALL SECTION ---
+            const params = new URLSearchParams({
+                symbol: currentSymbol,
+                interval: currentInterval,
+                limit: '300'
+            });
+            // Use a relative path. The browser will automatically use the current domain (e.g., https://your-app.vercel.app/api/...)
+            const apiUrl = `/api/binance/klines?${params.toString()}`;
+            console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
 
             const response = await fetch(apiUrl);
-            console.log("[Frontend] Local proxy response status:", response.status);
+            console.log("[Frontend] API response status:", response.status);
 
             if (!response.ok) {
-                let errorText = `[Frontend] Network response from local proxy was not ok: ${response.statusText} (Status: ${response.status})`;
-                let errorDataFromServer = {};
+                // Corrected error message to be generic
+                let errorText = `[Frontend] Network response was not ok: ${response.statusText} (Status: ${response.status})`;
                 try {
-                    errorDataFromServer = await response.json();
+                    const errorDataFromServer = await response.json();
                     if (errorDataFromServer.binanceError && errorDataFromServer.binanceError.msg) {
                         errorText += ` - Binance Msg: ${errorDataFromServer.binanceError.msg}`;
                     }
@@ -387,7 +377,7 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
             const rawData = await response.json();
 
             if (!Array.isArray(rawData)) {
-                if (rawData.msg) throw new Error(`Binance API Error: ${rawData.msg}`);
+                if (rawData && rawData.msg) throw new Error(`Binance API Error: ${rawData.msg}`);
                 throw new Error('Data received from API was not an array.');
             }
 
@@ -405,7 +395,6 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
             }
         }
 
-        // --- The rest of the function continues as before, as it's data-driven ---
         candleSeries.setData(chartData);
         if (chartElement && chartElement.offsetParent !== null) {
             chart.timeScale().fitContent();
@@ -419,7 +408,6 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
 
         const closePrices = chartData.map(d => d.close);
         const timeAndClosePrices = chartData.map(d => ({ time: d.time, value: d.close }));
-
         const emaFastData = calculateEMA(timeAndClosePrices, indicatorSettings.emaFast);
         const emaSlowData = calculateEMA(timeAndClosePrices, indicatorSettings.emaSlow);
         const bbData = calculateBollingerBands(timeAndClosePrices, indicatorSettings.bbPeriod, indicatorSettings.bbStdDev);
@@ -446,9 +434,7 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
         }
         const fngText = fearGreedElement ? fearGreedElement.textContent : "";
         const fngNumericValue = fngText ? parseInt(fngText.match(/\d+/)?.[0]) : null;
-
         const lastBB = bbData.length > 0 ? bbData[bbData.length - 1] : { upper: lastCandle.high, lower: lastCandle.low, middle: lastCandle.close };
-
         const analysisData = {
             rsi: rsiValue, price: lastCandle.close, emaFast: lastEmaFast, emaSlow: lastEmaSlow,
             fngValue: fngNumericValue, bb: lastBB
@@ -461,7 +447,7 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
     } catch (error) {
         console.error('[Frontend] فشل في جلب وتحليل البيانات:', error);
         if (signalsLog) {
-            signalsLog.innerHTML = `<li class="log-item sell-signal">خطأ: ${error.message}.</li>`;
+            signalsLog.innerHTML = `<li class="log-item sell-signal">فشل في جلب البيانات: ${error.message}</li>`;
         }
         if (priceElement) priceElement.textContent = '---';
         if (trendElement) trendElement.textContent = '---';
@@ -469,11 +455,9 @@ console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
     }
 }
 
-
-// --- START: New Function to initialize the coin selector ---
 function initializeCoinSelector() {
     if (!coinSelectorElement) return;
-    coinSelectorElement.innerHTML = ''; // Clear previous buttons
+    coinSelectorElement.innerHTML = ''; 
 
     topCoins.forEach(coin => {
         const button = document.createElement('button');
@@ -489,24 +473,19 @@ function initializeCoinSelector() {
         button.addEventListener('click', () => {
             currentSymbol = button.dataset.symbol;
 
-            // Update chart title
             if (chartCoinTitleElement) {
-                chartCoinTitleElement.textContent = `شارت ${button.dataset.name} (${currentSymbol})`;
+                chartCoinTitleElement.textContent = `${button.dataset.name} Chart (${currentSymbol})`;
             }
 
-            // Update active button
             document.querySelectorAll('.coin-btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-
-            // Fetch new data for the selected coin
+            
             fetchDataAndAnalyze();
         });
 
         coinSelectorElement.appendChild(button);
     });
 }
-// --- END: New Function ---
-
 
 // --- User Interaction Setup ---
 if (timeframeButtons.length > 0) {
@@ -557,8 +536,6 @@ function startApp() {
         return;
     }
     syncTimeRange();
-
-    // --- MODIFIED: Call the new initializer ---
     initializeCoinSelector();
 
     if (emaFastInput) emaFastInput.value = indicatorSettings.emaFast;
@@ -570,7 +547,6 @@ function startApp() {
     fetchDataAndAnalyze();
     fetchFearAndGreed();
 
-    // The interval should fetch for the current symbol, which it now does automatically
     setInterval(fetchDataAndAnalyze, 30000);
     setInterval(fetchFearAndGreed, 60 * 60 * 1000);
 
@@ -590,5 +566,4 @@ function startApp() {
     }
 }
 
-// --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', startApp);
