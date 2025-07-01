@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
     
     // --- THIS IS THE KEY CHANGE ---
     // Use an alternative, non-restricted Binance API endpoint.
-    const binanceApiUrl = `https://api1.binance.com/api/v3/klines`;
+    const binanceApiUrl = `https://api2.binance.com/api/v3/klines`;
     // If api1 doesn't work, try api2.binance.com, then api3.binance.com
 
     try {
