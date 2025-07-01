@@ -358,14 +358,15 @@ async function fetchDataAndAnalyze() {
         } else {
             console.log(`[Frontend] Fetching data for symbol: ${currentSymbol}, interval: ${currentInterval}`);
 
-            const localProxyUrl = `http://localhost:3001/api/binance/klines`;
-            // --- MODIFIED: Use currentSymbol in the API call ---
-            const params = new URLSearchParams({
-                symbol: currentSymbol,
-                interval: currentInterval,
-                limit: '300'
-            });
-            const apiUrl = `${localProxyUrl}?${params.toString()}`;
+            // لا حاجة لـ localProxyUrl الآن
+          const params = new URLSearchParams({
+          symbol: currentSymbol,
+          interval: currentInterval,
+          limit: '300' 
+          });
+// استخدم مساراً نسبياً. المتصفح سيضيف النطاق تلقائياً
+const apiUrl = `/api/binance/klines?${params.toString()}`;
+console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
             console.log(`[Frontend] Fetching from local proxy URL: ${apiUrl}`);
 
             const response = await fetch(apiUrl);
