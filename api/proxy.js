@@ -17,50 +17,62 @@ module.exports = async (req, res) => {
 
     const { symbol, interval, limit } = req.query;
 
-    // Use a proxy to bypass geographic restrictions
-    const proxyUrl = process.env.PROXY_URL || 'https://api.proxyscrape.com'; // Configurable via environment variable
-    const binanceApiUrl = `${proxyUrl}/https://api.binance.com/api/v3/klines`; // Revert to original endpoint with proxy
+    // Define multiple proxy options and fallback to the original endpoint if proxy fails
+    const proxyOptions = [
+        process.env.PROXY_URL_1 || 'https://api.proxyscrape.com', // Primary proxy
+        process.env.PROXY_URL_2 || 'https://proxy.scrapeops.io/free', // Secondary proxy (free tier)
+    ];
+    const binanceEndpoints = [
+        'https://api.binance.com/api/v3/klines', // Original endpoint (worked locally)
+        'https://api2.binance.com/api/v3/klines', // Alternative endpoint
+    ];
 
-    // Optional: Add Binance API Key from environment variables
-    const apiKey = process.env.BINANCE_API_KEY || null;
+    let errorMessage = null;
+    let data = null;
 
-    console.log(`[Proxy] Received request for: symbol=${symbol}, interval=${interval}, limit=${limit}`);
-    console.log(`[Proxy] Fetching from Binance URL via proxy: ${binanceApiUrl}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+    // Try each proxy and endpoint combination
+    for (const proxy of proxyOptions) {
+        for (const endpoint of binanceEndpoints) {
+            const fullUrl = `${proxy}/${endpoint}`;
+            console.log(`[Proxy] Trying: ${fullUrl}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
 
-    try {
-        const response = await axios.get(binanceApiUrl, {
-            params: {
-                symbol: symbol || 'BTCUSDT',
-                interval: interval || '1m', // Match local success with '1m' default
-                limit: parseInt(limit) || 100,
-            },
-            headers: apiKey ? { 'X-MBX-APIKEY': apiKey } : {},
-            proxy: false, // Disable Node.js proxy as we're using an external proxy URL
-        });
+            try {
+                const response = await axios.get(fullUrl, {
+                    params: {
+                        symbol: symbol || 'BTCUSDT',
+                        interval: interval || '1m',
+                        limit: parseInt(limit) || 100,
+                    },
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', // Mimic browser
+                    },
+                    timeout: 5000, // 5-second timeout
+                });
 
-        console.log(`[Proxy] Binance API response status: ${response.status}`);
-        res.status(200).json(response.data);
-
-    } catch (error) {
-        console.error('[Proxy] Error fetching from Binance API:');
-        if (error.response) {
-            // Request made and server responded with a status outside 2xx
-            console.error('Error Data:', error.response.data);
-            console.error('Error Status:', error.response.status);
-            console.error('Error Headers:', error.response.headers);
-            res.status(error.response.status).json({
-                message: 'Error from Binance API',
-                binanceError: error.response.data,
-                suggestion: error.response.status === 451 ? 'Service unavailable due to geographic restrictions. Use a different proxy or contact Binance support.' : null,
-            });
-        } else if (error.request) {
-            // Request made but no response received
-            console.error('Error Request:', error.request);
-            res.status(504).json({ message: 'No response received from Binance API (Gateway Timeout)' });
-        } else {
-            // Error occurred while setting up the request
-            console.error('Error Message:', error.message);
-            res.status(500).json({ message: 'Error setting up request to Binance API', error: error.message });
+                console.log(`[Proxy] Success with ${fullUrl}, Status: ${response.status}`);
+                data = response.data;
+                break;
+            } catch (error) {
+                errorMessage = `[Proxy] Error with ${fullUrl}: ${error.response ? error.response.status : error.message}`;
+                console.error(errorMessage);
+                if (error.response && error.response.status === 451) {
+                    console.warn('Geographic restriction detected, trying next option...');
+                }
+                continue; // Try next combination
+            }
         }
+        if (data) break; // Exit if data is retrieved
     }
+
+    // If no data retrieved, return the last error
+    if (!data) {
+        console.error('[Proxy] All attempts failed:', errorMessage);
+        return res.status(451).json({
+            message: 'Failed to fetch from Binance API',
+            binanceError: 'Service unavailable due to geographic restrictions or proxy failure',
+            suggestion: 'Check PROXY_URL_1 and PROXY_URL_2 environment variables or contact Binance support.',
+        });
+    }
+
+    res.status(200).json(data);
 };
