@@ -14,107 +14,143 @@ module.exports = async (req, res) => {
 
     const { symbol, interval, limit } = req.query;
     
-    // محاولة عدة طرق للحصول على البيانات
-    const methods = [
-        // 1. محاولة مباشرة لـ Binance
+    // قائمة بـ proxies مختلفة
+    const proxyEndpoints = [
+        // 1. Proxy 1 - AllOrigins
         async () => {
-            const response = await axios.get('https://api.binance.com/api/v3/klines', {
-                params: {
-                    symbol: symbol || 'BTCUSDT',
-                    interval: interval || '5m',
-                    limit: parseInt(limit) || 100,
-                },
+            const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol || 'BTCUSDT'}&interval=${interval || '5m'}&limit=${limit || 100}`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(binanceUrl)}`;
+            
+            const response = await axios.get(proxyUrl, {
+                timeout: 10000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                },
-                timeout: 5000
+                }
             });
+            
             return response.data;
         },
         
-        // 2. استخدام proxy service
+        // 2. Proxy 2 - jsonp.afeld.me
         async () => {
             const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol || 'BTCUSDT'}&interval=${interval || '5m'}&limit=${limit || 100}`;
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(binanceUrl)}`;
+            const proxyUrl = `https://jsonp.afeld.me/?url=${encodeURIComponent(binanceUrl)}`;
             
             const response = await axios.get(proxyUrl, {
-                timeout: 8000,
+                timeout: 10000,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            return response.data;
+        },
+        
+        // 3. Proxy 3 - corsproxy.io
+        async () => {
+            const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol || 'BTCUSDT'}&interval=${interval || '5m'}&limit=${limit || 100}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(binanceUrl)}`;
+            
+            const response = await axios.get(proxyUrl, {
+                timeout: 10000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0'
                 }
             });
             
-            if (response.data && response.data.contents) {
-                return JSON.parse(response.data.contents);
-            }
-            throw new Error('Invalid proxy response');
+            return response.data;
         },
         
-        // 3. بيانات تجريبية في حالة فشل كل المحاولات
+        // 4. محاولة مباشرة عبر Binance Cloud
         async () => {
-            console.log('Returning mock data for testing');
-            return generateMockData(symbol || 'BTCUSDT', interval || '5m', parseInt(limit) || 100);
+            const response = await axios.get('https://data.binance.com/api/v3/klines', {
+                params: {
+                    symbol: symbol || 'BTCUSDT',
+                    interval: interval || '5m',
+                    limit: parseInt(limit) || 100
+                },
+                timeout: 8000,
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Mozilla/5.0'
+                }
+            });
+            
+            return response.data;
+        },
+        
+        // 5. استخدام CoinGecko API كبديل
+        async () => {
+            console.log('محاولة استخدام CoinGecko API...');
+            
+            // تحويل الرمز من Binance إلى CoinGecko
+            const coinMap = {
+                'BTCUSDT': 'bitcoin',
+                'ETHUSDT': 'ethereum',
+                'BNBUSDT': 'binancecoin',
+                'SOLUSDT': 'solana',
+                'XRPUSDT': 'ripple',
+                'DOGEUSDT': 'dogecoin',
+                'ADAUSDT': 'cardano',
+                'AVAXUSDT': 'avalanche-2',
+                'SHIBUSDT': 'shiba-inu',
+                'DOTUSDT': 'polkadot'
+            };
+            
+            const coinId = coinMap[symbol] || 'bitcoin';
+            const days = interval === '5m' ? '1' : interval === '1h' ? '7' : '30';
+            
+            const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${coinId}/ohlc`, {
+                params: {
+                    vs_currency: 'usd',
+                    days: days
+                },
+                timeout: 10000
+            });
+            
+            // تحويل بيانات CoinGecko إلى تنسيق Binance
+            const data = response.data.map(candle => [
+                candle[0], // timestamp
+                candle[1].toString(), // open
+                candle[2].toString(), // high
+                candle[3].toString(), // low
+                candle[4].toString(), // close
+                "1000", // volume تقريبي
+                candle[0] + 300000, // close time
+                "1000000", // quote volume
+                100, // trades
+                "500", // taker buy base
+                "500000", // taker buy quote
+                "0"
+            ]);
+            
+            return data.slice(-parseInt(limit || 100));
         }
     ];
 
-    // تجربة كل طريقة
-    for (let i = 0; i < methods.length; i++) {
+    // تجربة كل proxy
+    for (let i = 0; i < proxyEndpoints.length; i++) {
         try {
-            console.log(`Trying method ${i + 1}...`);
-            const data = await methods[i]();
-            console.log(`Success with method ${i + 1}`);
-            return res.status(200).json(data);
-        } catch (error) {
-            console.error(`Method ${i + 1} failed:`, error.message);
-            if (i === methods.length - 1) {
-                // آخر محاولة - نعيد البيانات التجريبية
-                const mockData = generateMockData(symbol || 'BTCUSDT', interval || '5m', parseInt(limit) || 100);
-                return res.status(200).json(mockData);
+            console.log(`جرب Proxy ${i + 1}...`);
+            const data = await proxyEndpoints[i]();
+            
+            // التحقق من صحة البيانات
+            if (Array.isArray(data) && data.length > 0) {
+                console.log(`نجح Proxy ${i + 1}`);
+                return res.status(200).json(data);
             }
+        } catch (error) {
+            console.error(`فشل Proxy ${i + 1}:`, error.message);
+            continue;
         }
     }
+    
+    // إذا فشلت جميع المحاولات، أعد رسالة خطأ واضحة
+    console.error('فشلت جميع محاولات الحصول على البيانات الحقيقية');
+    
+    return res.status(503).json({
+        error: 'Unable to fetch real-time data',
+        message: 'جميع مصادر البيانات غير متاحة حالياً. يرجى المحاولة لاحقاً أو استخدام VPN.',
+        suggestion: 'يمكنك استخدام خدمة VPN أو الاتصال بدعم Binance لحل مشكلة الحظر الجغرافي.'
+    });
 };
-
-// توليد بيانات تجريبية
-function generateMockData(symbol, interval, limit) {
-    const now = Date.now();
-    const intervalMs = {
-        '1m': 60000,
-        '5m': 300000,
-        '15m': 900000,
-        '1h': 3600000,
-        '4h': 14400000,
-        '1d': 86400000
-    }[interval] || 300000;
-    
-    const data = [];
-    let price = symbol.includes('BTC') ? 45000 : symbol.includes('ETH') ? 3000 : 100;
-    
-    for (let i = limit - 1; i >= 0; i--) {
-        const timestamp = now - (i * intervalMs);
-        const open = price + (Math.random() - 0.5) * price * 0.02;
-        const close = open + (Math.random() - 0.5) * price * 0.01;
-        const high = Math.max(open, close) + Math.random() * price * 0.005;
-        const low = Math.min(open, close) - Math.random() * price * 0.005;
-        const volume = Math.random() * 1000;
-        
-        data.push([
-            timestamp,
-            open.toFixed(2),
-            high.toFixed(2),
-            low.toFixed(2),
-            close.toFixed(2),
-            volume.toFixed(2),
-            timestamp + intervalMs - 1,
-            (volume * close).toFixed(2),
-            Math.floor(Math.random() * 1000),
-            (volume * 0.5).toFixed(2),
-            (volume * close * 0.5).toFixed(2),
-            "0"
-        ]);
-        
-        price = close;
-    }
-    
-    return data;
-}
