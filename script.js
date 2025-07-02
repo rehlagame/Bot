@@ -356,7 +356,7 @@ async function fetchDataAndAnalyze() {
                 limit: '300'
             });
             // Use a relative path. The browser will automatically use the current domain (e.g., https://your-app.vercel.app/api/...)
-            const apiUrl = `/api/binance/klines?${params.toString()}`;
+            const apiUrl = `/api/proxy?${params.toString()}`;
             console.log(`[Frontend] Fetching from serverless function URL: ${apiUrl}`);
 
             const response = await fetch(apiUrl);
