@@ -1,5 +1,3 @@
-// File: /api/proxy.js (Corrected with alternative Binance endpoint)
-
 const axios = require('axios');
 
 module.exports = async (req, res) => {
@@ -18,11 +16,13 @@ module.exports = async (req, res) => {
     }
 
     const { symbol, interval, limit } = req.query;
-    
-    // --- THIS IS THE KEY CHANGE ---
-    // Use an alternative, non-restricted Binance API endpoint.
-    const binanceApiUrl = `https://api2.binance.com/api/v3/klines`;
-    // If api1 doesn't work, try api2.binance.com, then api3.binance.com
+
+    // Use a proxy to bypass geographic restrictions (e.g., a free proxy service or a paid VPN API)
+    const proxyUrl = 'https://your-proxy-service.com'; // Replace with a valid proxy URL (e.g., https://api.proxyscrape.com)
+    const binanceApiUrl = `${proxyUrl}/https://api2.binance.com/api/v3/klines`; // Proxy + Binance endpoint
+
+    // Optional: Add your Binance API Key if available
+    const apiKey = process.env.BINANCE_API_KEY || null; // Retrieve from environment variables
 
     try {
         const response = await axios.get(binanceApiUrl, {
@@ -31,16 +31,20 @@ module.exports = async (req, res) => {
                 interval: interval || '1h',
                 limit: parseInt(limit) || 100,
             },
+            headers: apiKey ? { 'X-MBX-APIKEY': apiKey } : {},
+            proxy: false, // Disable Node.js proxy if using an external proxy URL
         });
-        
+
         res.status(200).json(response.data);
 
     } catch (error) {
         console.error('Error fetching from Binance API:', error.response ? error.response.data : error.message);
-        
+
+        // Enhanced error response with geographic restriction hint
         res.status(error.response?.status || 500).json({
             message: 'Error fetching from Binance API',
             binanceError: error.response?.data || 'Unknown error',
+            suggestion: error.response?.status === 451 ? 'Service unavailable due to geographic restrictions. Consider using a proxy or contacting Binance support.' : null,
         });
     }
 };
