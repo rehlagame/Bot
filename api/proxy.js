@@ -17,11 +17,7 @@ module.exports = async (req, res) => {
 
     const { symbol, interval, limit } = req.query;
 
-    // Define multiple proxy options and fallback to the original endpoint if proxy fails
-    const proxyOptions = [
-        process.env.PROXY_URL_1 || 'https://api.proxyscrape.com', // Primary proxy
-        process.env.PROXY_URL_2 || 'https://proxy.scrapeops.io/free', // Secondary proxy (free tier)
-    ];
+    // Define Binance API endpoints (no proxy)
     const binanceEndpoints = [
         'https://api.binance.com/api/v3/klines', // Original endpoint (worked locally)
         'https://api2.binance.com/api/v3/klines', // Alternative endpoint
@@ -30,47 +26,46 @@ module.exports = async (req, res) => {
     let errorMessage = null;
     let data = null;
 
-    // Try each proxy and endpoint combination
-    for (const proxy of proxyOptions) {
-        for (const endpoint of binanceEndpoints) {
-            const fullUrl = `${proxy}/${endpoint}`;
-            console.log(`[Proxy] Trying: ${fullUrl}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+    // Try each Binance endpoint
+    for (const endpoint of binanceEndpoints) {
+        console.log(`[Direct] Trying: ${endpoint}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
 
-            try {
-                const response = await axios.get(fullUrl, {
-                    params: {
-                        symbol: symbol || 'BTCUSDT',
-                        interval: interval || '1m',
-                        limit: parseInt(limit) || 100,
-                    },
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', // Mimic browser
-                    },
-                    timeout: 5000, // 5-second timeout
-                });
+        try {
+            const response = await axios.get(endpoint, {
+                params: {
+                    symbol: symbol || 'BTCUSDT',
+                    interval: interval || '1m', // Match local success
+                    limit: parseInt(limit) || 100,
+                },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', // Mimic browser
+                    'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '', // Add API Key if available
+                },
+                timeout: 5000, // 5-second timeout
+            });
 
-                console.log(`[Proxy] Success with ${fullUrl}, Status: ${response.status}`);
-                data = response.data;
-                break;
-            } catch (error) {
-                errorMessage = `[Proxy] Error with ${fullUrl}: ${error.response ? error.response.status : error.message}`;
-                console.error(errorMessage);
-                if (error.response && error.response.status === 451) {
-                    console.warn('Geographic restriction detected, trying next option...');
-                }
-                continue; // Try next combination
+            console.log(`[Direct] Success with ${endpoint}, Status: ${response.status}`);
+            data = response.data;
+            break;
+        } catch (error) {
+            errorMessage = `[Direct] Error with ${endpoint}: ${error.response ? error.response.status : error.message}`;
+            console.error(errorMessage);
+            if (error.response && error.response.status === 451) {
+                console.warn('Geographic restriction detected, trying next endpoint...');
+            } else if (error.response) {
+                console.error('Error Data:', error.response.data);
             }
+            continue; // Try next endpoint
         }
-        if (data) break; // Exit if data is retrieved
     }
 
     // If no data retrieved, return the last error
     if (!data) {
-        console.error('[Proxy] All attempts failed:', errorMessage);
-        return res.status(451).json({
+        console.error('[Direct] All attempts failed:', errorMessage);
+        return res.status(errorMessage.includes('451') ? 451 : 500).json({
             message: 'Failed to fetch from Binance API',
-            binanceError: 'Service unavailable due to geographic restrictions or proxy failure',
-            suggestion: 'Check PROXY_URL_1 and PROXY_URL_2 environment variables or contact Binance support.',
+            binanceError: errorMessage.includes('451') ? 'Service unavailable due to geographic restrictions' : 'Unknown error',
+            suggestion: errorMessage.includes('451') ? 'Contact Binance support to resolve geographic restrictions or use a VPN.' : 'Check network or API key.',
         });
     }
 
