@@ -365,6 +365,11 @@ async function fetchDataAndAnalyze() {
             if (!response.ok) {
                 // Corrected error message to be generic
                 let errorText = `[Frontend] Network response was not ok: ${response.statusText} (Status: ${response.status})`;
+                // إذا كان الخطأ 503، اعرض رسالة واضحة
+                if (response.status === 503) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'فشل في الحصول على البيانات الحقيقية');
+                }
                 try {
                     const errorDataFromServer = await response.json();
                     if (errorDataFromServer.binanceError && errorDataFromServer.binanceError.msg) {
