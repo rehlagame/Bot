@@ -38,62 +38,63 @@
     <div class="ticker-tape-container">
         <!-- TradingView Widget BEGIN -->
         <div class="tradingview-widget-container">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-          {
-            "symbols": [
-              {
-                "proName": "OANDA:XAUUSD",
-                "title": "الذهب"
-              },
-              {
-                "proName": "OANDA:XAGUSD",
-                "title": "الفضة"
-              },
-              {
-                "proName": "NYMEX:CL1!",
-                "title": "النفط الخام"
-              },
-              {
-                "proName": "NYMEX:NG1!",
-                "title": "الغاز الطبيعي"
-              },
-              {
-                "description": "مؤشر S&P 500",
-                "proName": "SP:SPX"
-              },
-              {
-                "description": "مؤشر ناسداك 100",
-                "proName": "NASDAQ:NDX"
-              },
-              {
-                "description": "مؤشر داو جونز",
-                "proName": "DJ:DJI"
-              },
-              {
-                "description": "سهم آبل",
-                "proName": "NASDAQ:AAPL"
-              },
-              {
-                "description": "سهم مايكروسوفت",
-                "proName": "NASDAQ:MSFT"
-              },
-              {
-                "description": "سهم أمازون",
-                "proName": "NASDAQ:AMZN"
-              },
-              {
-                "description": "سهم جوجل",
-                "proName": "NASDAQ:GOOGL"
-              }
-            ],
-            "showSymbolLogo": true,
-            "colorTheme": "dark",
-            "isTransparent": true,
-            "displayMode": "adaptive",
-            "locale": "ar_AE"
-          }
-          </script>
+            <div class="tradingview-widget-container__widget"></div>
+            <!-- *** التغيير الوحيد هنا: تم تغيير type إلى "text/json" *** -->
+            <script type="text/json" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                {
+                    "symbols": [
+                    {
+                        "proName": "OANDA:XAUUSD",
+                        "title": "الذهب"
+                    },
+                    {
+                        "proName": "OANDA:XAGUSD",
+                        "title": "الفضة"
+                    },
+                    {
+                        "proName": "NYMEX:CL1!",
+                        "title": "النفط الخام"
+                    },
+                    {
+                        "proName": "NYMEX:NG1!",
+                        "title": "الغاز الطبيعي"
+                    },
+                    {
+                        "description": "مؤشر S&P 500",
+                        "proName": "SP:SPX"
+                    },
+                    {
+                        "description": "مؤشر ناسداك 100",
+                        "proName": "NASDAQ:NDX"
+                    },
+                    {
+                        "description": "مؤشر داو جونز",
+                        "proName": "DJ:DJI"
+                    },
+                    {
+                        "description": "سهم آبل",
+                        "proName": "NASDAQ:AAPL"
+                    },
+                    {
+                        "description": "سهم مايكروسوفت",
+                        "proName": "NASDAQ:MSFT"
+                    },
+                    {
+                        "description": "سهم أمازون",
+                        "proName": "NASDAQ:AMZN"
+                    },
+                    {
+                        "description": "سهم جوجل",
+                        "proName": "NASDAQ:GOOGL"
+                    }
+                ],
+                    "showSymbolLogo": true,
+                    "colorTheme": "dark",
+                    "isTransparent": true,
+                    "displayMode": "adaptive",
+                    "locale": "ar_AE"
+                }
+            </script>
         </div>
         <!-- TradingView Widget END -->
     </div>
