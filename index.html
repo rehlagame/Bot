@@ -6,21 +6,21 @@
     <title>بوت التحليل الاستشاري</title>
     <link rel="stylesheet" href="style.css">
     <script>
-        // التحقق من تسجيل الدخول
+        // التحقق من تسجيل الدخول (الكود الحالي يبقى كما هو)
         (function() {
             const isLoggedIn = sessionStorage.getItem('isLoggedIn');
             const loginTime = sessionStorage.getItem('loginTime');
-            
+
             if (isLoggedIn !== 'true' || !loginTime) {
                 // المستخدم غير مسجل دخول
                 window.location.href = 'login.html';
                 return;
             }
-            
+
             // التحقق من انتهاء صلاحية الجلسة (24 ساعة)
             const currentTime = new Date().getTime();
             const sessionDuration = 24 * 60 * 60 * 1000; // 24 ساعة
-            
+
             if (currentTime - parseInt(loginTime) > sessionDuration) {
                 // انتهت صلاحية الجلسة
                 sessionStorage.removeItem('isLoggedIn');
@@ -33,6 +33,72 @@
 <body>
 <header>
     <h1>لوحة التحكم الاستشارية للتداول</h1>
+
+    <!-- START: الشريط الإخباري المتحرك للأسعار العالمية -->
+    <div class="ticker-tape-container">
+        <!-- TradingView Widget BEGIN -->
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+          {
+            "symbols": [
+              {
+                "proName": "OANDA:XAUUSD",
+                "title": "الذهب"
+              },
+              {
+                "proName": "OANDA:XAGUSD",
+                "title": "الفضة"
+              },
+              {
+                "proName": "NYMEX:CL1!",
+                "title": "النفط الخام"
+              },
+              {
+                "proName": "NYMEX:NG1!",
+                "title": "الغاز الطبيعي"
+              },
+              {
+                "description": "مؤشر S&P 500",
+                "proName": "SP:SPX"
+              },
+              {
+                "description": "مؤشر ناسداك 100",
+                "proName": "NASDAQ:NDX"
+              },
+              {
+                "description": "مؤشر داو جونز",
+                "proName": "DJ:DJI"
+              },
+              {
+                "description": "سهم آبل",
+                "proName": "NASDAQ:AAPL"
+              },
+              {
+                "description": "سهم مايكروسوفت",
+                "proName": "NASDAQ:MSFT"
+              },
+              {
+                "description": "سهم أمازون",
+                "proName": "NASDAQ:AMZN"
+              },
+              {
+                "description": "سهم جوجل",
+                "proName": "NASDAQ:GOOGL"
+              }
+            ],
+            "showSymbolLogo": true,
+            "colorTheme": "dark",
+            "isTransparent": true,
+            "displayMode": "adaptive",
+            "locale": "ar_AE"
+          }
+          </script>
+        </div>
+        <!-- TradingView Widget END -->
+    </div>
+    <!-- END: الشريط الإخباري المتحرك للأسعار العالمية -->
+
     <!-- زر تسجيل الخروج -->
     <button id="logoutBtn" style="position: absolute; top: 20px; left: 20px; background: linear-gradient(45deg, #f44336, #d32f2f); border: none; color: white; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; transition: all 0.3s ease;">
         تسجيل الخروج
@@ -40,6 +106,7 @@
 </header>
 
 <main>
+    <!-- بقية محتوى الصفحة يبقى كما هو -->
     <div class="dashboard">
         <!-- قسم الشارت -->
         <div class="chart-container">
@@ -126,7 +193,7 @@
 <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="script.js"></script>
 <script>
-    // معالج زر تسجيل الخروج
+    // معالج زر تسجيل الخروج (الكود الحالي يبقى كما هو)
     document.getElementById('logoutBtn').addEventListener('click', () => {
         if (confirm('هل أنت متأكد من أنك تريد تسجيل الخروج؟')) {
             sessionStorage.removeItem('isLoggedIn');
